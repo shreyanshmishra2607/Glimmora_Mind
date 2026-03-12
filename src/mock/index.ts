@@ -2,7 +2,7 @@
  * Mock data – only to be imported by shared/services/api/*.
  * UI must never import from @/mock.
  */
-export { mockUsers } from "./mockUsers";
+export { mockUsers, MOCK_GOOGLE_USER } from "./mockUsers";
 export { mockTherapists } from "./mockTherapists";
 export {
   mockSessions,

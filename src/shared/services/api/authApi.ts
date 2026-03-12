@@ -1,6 +1,6 @@
 import { ApiError } from "@/shared/utils";
 import { withDelay, shouldSimulateError } from "@/shared/services/client";
-import { mockUsers } from "@/mock";
+import { mockUsers, MOCK_GOOGLE_USER } from "@/mock";
 import type { User } from "@/shared/types";
 
 export interface LoginCredentials {
@@ -37,14 +37,33 @@ export async function signup(credentials: SignupCredentials): Promise<AuthRespon
       (u) => u.email.toLowerCase() === credentials.email.toLowerCase()
     );
     if (exists) throw new ApiError("Email already registered", 409);
-    const user = {
+    const user: User = {
       id: `user-${Date.now()}`,
       email: credentials.email,
       name: credentials.name,
       avatarUrl: null,
+      bio: null,
+      phone: null,
+      plan: "free",
+      authProvider: "email",
       createdAt: new Date().toISOString(),
     };
     return { user, token: `mock-token-${user.id}` };
+  });
+}
+
+/**
+ * Simulates the Google OAuth redirect + callback flow.
+ * In production this would be replaced by your OAuth provider's SDK
+ * (e.g. NextAuth, Supabase, Firebase Auth). The function signature stays the same.
+ */
+export async function loginWithGoogle(): Promise<AuthResponse> {
+  return withDelay(async () => {
+    if (shouldSimulateError()) throw new ApiError("Network error", 500);
+    return {
+      user: MOCK_GOOGLE_USER,
+      token: `mock-google-token-${MOCK_GOOGLE_USER.id}`,
+    };
   });
 }
 

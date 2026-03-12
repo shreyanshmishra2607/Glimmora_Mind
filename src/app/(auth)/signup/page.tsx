@@ -1,23 +1,30 @@
 import { SignupForm } from "@/components/auth/SignupForm";
-import Link from "next/link";
+import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">Create account</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Sign up with any email to try the mock
-          </p>
+    <div className="min-h-screen flex">
+      {/* Left brand panel – hidden on small screens */}
+      <AuthBrandPanel />
+
+      {/* Right form panel */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12 lg:px-12">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 space-y-1">
+            {/* Mobile-only logo */}
+            <div className="flex items-center gap-2 mb-6 lg:hidden">
+              <span className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                G
+              </span>
+              <span className="font-semibold text-base">Glimmora Mind</span>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
+            <p className="text-sm text-muted-foreground">
+              Start your wellbeing journey — it&apos;s free.
+            </p>
+          </div>
+          <SignupForm />
         </div>
-        <SignupForm />
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Log in
-          </Link>
-        </p>
       </div>
     </div>
   );

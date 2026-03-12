@@ -16,6 +16,11 @@ export function useAuth() {
     onSuccess: ({ user: u, token: t }) => setUser(u, t),
   });
 
+  const googleMutation = useMutation({
+    mutationFn: () => authApi.loginWithGoogle(),
+    onSuccess: ({ user: u, token: t }) => setUser(u, t),
+  });
+
   function logout() {
     authApi.logout().finally(storeLogout);
   }
@@ -28,10 +33,13 @@ export function useAuth() {
     isAuthenticated,
     login: loginMutation.mutateAsync,
     signup: signupMutation.mutateAsync,
+    loginWithGoogle: googleMutation.mutateAsync,
     logout,
     isLoggingIn: loginMutation.isPending,
     isSigningUp: signupMutation.isPending,
+    isGooglePending: googleMutation.isPending,
     loginError: loginMutation.error,
     signupError: signupMutation.error,
+    googleError: googleMutation.error,
   };
 }
