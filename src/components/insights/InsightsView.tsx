@@ -1,7 +1,13 @@
 "use client";
 
 import { useInsights } from "@/shared/hooks";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
 import {
   LineChart,
   Line,
@@ -11,24 +17,59 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { TrendingUp, TrendingDown, Minus, Heart, CalendarCheck } from "lucide-react";
+
+const TREND_META = {
+  improving: {
+    icon: TrendingUp,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    label: "Improving",
+  },
+  declining: {
+    icon: TrendingDown,
+    color: "text-rose-600",
+    bg: "bg-rose-50",
+    label: "Declining",
+  },
+  stable: {
+    icon: Minus,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    label: "Stable",
+  },
+};
 
 export function InsightsView() {
   const { insights, isLoading, isError, error } = useInsights(14);
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-border p-4 text-destructive">
+      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive text-sm">
         {error?.message ?? "Failed to load insights"}
       </div>
     );
   }
 
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading insights...</p>;
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border bg-card p-5 h-24" />
+          ))}
+        </div>
+        <div className="rounded-xl border border-border bg-card h-80" />
+      </div>
+    );
   }
 
   if (!insights) {
-    return <p className="text-muted-foreground">No insights data.</p>;
+    return (
+      <div className="text-center py-16 text-muted-foreground text-sm">
+        No insights data available.
+      </div>
+    );
   }
 
   const chartData = insights.moodData
@@ -39,59 +80,120 @@ export function InsightsView() {
       entries: d.entryCount,
     }));
 
+  const trendKey = (insights.moodTrend ?? "stable") as keyof typeof TREND_META;
+  const trend = TREND_META[trendKey] ?? TREND_META.stable;
+  const TrendIcon = trend.icon;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        <Card className="flex-1 min-w-[140px]">
-          <CardHeader className="pb-2">
-            <CardDescription>Mood trend</CardDescription>
-            <CardTitle className="text-lg capitalize">{insights.moodTrend}</CardTitle>
-          </CardHeader>
+      {/* ── Stat cards ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Mood trend */}
+        <Card>
+          <CardContent className="pt-5 pb-5 px-5">
+            <div className="flex items-center gap-3">
+              <div className={`h-10 w-10 rounded-xl ${trend.bg} flex items-center justify-center shrink-0`}>
+                <TrendIcon className={`h-5 w-5 ${trend.color}`} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Mood trend</p>
+                <p className={`text-xl font-bold mt-0.5 capitalize ${trend.color}`}>
+                  {trend.label}
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="flex-1 min-w-[140px]">
-          <CardHeader className="pb-2">
-            <CardDescription>Top mood</CardDescription>
-            <CardTitle className="text-lg capitalize">{insights.topMood}</CardTitle>
-          </CardHeader>
+
+        {/* Top mood */}
+        <Card>
+          <CardContent className="pt-5 pb-5 px-5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                <Heart className="h-5 w-5 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Top mood</p>
+                <p className="text-xl font-bold mt-0.5 capitalize text-violet-600">
+                  {insights.topMood}
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="flex-1 min-w-[140px]">
-          <CardHeader className="pb-2">
-            <CardDescription>Sessions completed</CardDescription>
-            <CardTitle className="text-lg">{insights.totalSessions}</CardTitle>
-          </CardHeader>
+
+        {/* Sessions */}
+        <Card>
+          <CardContent className="pt-5 pb-5 px-5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <CalendarCheck className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Sessions completed</p>
+                <p className="text-xl font-bold mt-0.5 text-blue-600">
+                  {insights.totalSessions}
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
 
+      {/* ── Mood chart ─────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>Mood over time</CardTitle>
-          <CardDescription>{insights.period} (1–7 scale)</CardDescription>
+          <CardTitle className="text-base sm:text-lg">Mood over time</CardTitle>
+          <CardDescription>{insights.period} · scored 1–7</CardDescription>
         </CardHeader>
         <CardContent>
           {chartData.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-8 text-center">
-              No mood entries in this period. Log your mood to see trends.
-            </p>
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <p className="text-3xl">📊</p>
+              <p className="text-sm text-muted-foreground text-center max-w-xs">
+                No mood entries in this period. Start logging your mood to see trends here.
+              </p>
+            </div>
           ) : (
-            <div className="h-[300px] w-full">
+            <div className="h-[260px] sm:h-[320px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis domain={[1, 7]} className="text-xs" />
+                <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--border))"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    domain={[1, 7]}
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
+                      borderRadius: "0.625rem",
+                      fontSize: 12,
                     }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Line
                     type="monotone"
                     dataKey="mood"
                     stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
+                    strokeWidth={2.5}
+                    dot={{
+                      fill: "hsl(var(--primary))",
+                      strokeWidth: 0,
+                      r: 4,
+                    }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

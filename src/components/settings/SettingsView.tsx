@@ -2,12 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/shared/hooks";
-import { Button, Input, Label, Card, CardContent, CardHeader, CardTitle, CardDescription, Badge } from "@/components/ui";
+import {
+  Button,
+  Input,
+  Label,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Badge,
+} from "@/components/ui";
 import { isApiError } from "@/shared/utils";
-import { User, Lock, CreditCard, CheckCircle2 } from "lucide-react";
+import { User, Lock, CreditCard, CheckCircle2, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserPlan } from "@/shared/types";
 
+/* ─── Types / config ─────────────────────────────────────────────────── */
 type Tab = "profile" | "account" | "security";
 
 const PLAN_LABELS: Record<UserPlan, string> = {
@@ -23,44 +34,27 @@ const PLAN_BADGE: Record<UserPlan, "outline" | "secondary" | "default"> = {
 };
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
 
+/* ─── Profile tab ────────────────────────────────────────────────────── */
 function ProfileTab() {
-  const {
-    user,
-    updateProfile,
-    isSavingProfile,
-    profileSaved,
-    profileError,
-  } = useProfile();
+  const { user, updateProfile, isSavingProfile, profileSaved, profileError } =
+    useProfile();
 
-  const [name, setName] = useState(user?.name ?? "");
-  const [bio, setBio] = useState(user?.bio ?? "");
+  const [name,  setName]  = useState(user?.name  ?? "");
+  const [bio,   setBio]   = useState(user?.bio   ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
 
   useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setBio(user.bio ?? "");
-      setPhone(user.phone ?? "");
-    }
+    if (user) { setName(user.name); setBio(user.bio ?? ""); setPhone(user.phone ?? ""); }
   }, [user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await updateProfile({
-        name: name.trim(),
-        bio: bio.trim() || null,
-        phone: phone.trim() || null,
-      });
-    } catch { /* error shown below */ }
+      await updateProfile({ name: name.trim(), bio: bio.trim() || null, phone: phone.trim() || null });
+    } catch { /* shown below */ }
   }
 
   const errorMessage = profileError
@@ -69,17 +63,23 @@ function ProfileTab() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Avatar block */}
+      {/* Avatar */}
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-semibold select-none">
-          {user ? getInitials(user.name) : "?"}
+        <div className="relative">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold select-none">
+            {user ? getInitials(user.name) : "?"}
+          </div>
+          <button
+            type="button"
+            className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-sm"
+            onClick={() => alert("Photo upload available after backend integration.")}
+          >
+            <Camera className="h-3 w-3" />
+          </button>
         </div>
         <div>
-          <p className="text-sm font-medium">{user?.name}</p>
+          <p className="text-sm font-semibold">{user?.name}</p>
           <p className="text-xs text-muted-foreground">{user?.email}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Photo upload available after backend integration
-          </p>
         </div>
       </div>
 
@@ -110,8 +110,8 @@ function ProfileTab() {
           <Label htmlFor="settings-bio">Bio</Label>
           <textarea
             id="settings-bio"
-            className="w-full min-h-[96px] rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
-            placeholder="A few words about yourself..."
+            className="w-full min-h-[96px] rounded-lg border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
+            placeholder="A few words about yourself…"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={200}
@@ -121,54 +121,55 @@ function ProfileTab() {
       </div>
 
       {errorMessage && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive border border-destructive/20">
+        <p className="rounded-lg bg-destructive/8 px-3 py-2 text-sm text-destructive border border-destructive/20">
           {errorMessage}
         </p>
       )}
 
       {profileSaved && (
-        <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+        <p className="flex items-center gap-1.5 text-sm text-emerald-600 animate-fade-in">
           <CheckCircle2 className="h-4 w-4" /> Profile saved successfully.
         </p>
       )}
 
       <Button type="submit" loading={isSavingProfile} disabled={isSavingProfile}>
-        {isSavingProfile ? "Saving..." : "Save changes"}
+        {isSavingProfile ? "Saving…" : "Save changes"}
       </Button>
     </form>
   );
 }
 
+/* ─── Account tab ────────────────────────────────────────────────────── */
 function AccountTab() {
   const { user } = useProfile();
   if (!user) return null;
 
-  const plan = user.plan ?? "free";
+  const plan = (user.plan ?? "free") as UserPlan;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Email address</CardTitle>
-          <CardDescription>Your login email. Contact support to change it.</CardDescription>
+          <CardTitle className="text-sm">Email address</CardTitle>
+          <CardDescription className="text-xs">Your login email. Contact support to change it.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted text-sm">
-            <span className="font-mono">{user.email}</span>
-            <Badge variant="success">Verified</Badge>
+          <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted text-sm gap-3">
+            <span className="font-mono text-sm truncate">{user.email}</span>
+            <Badge variant="success" className="shrink-0">Verified</Badge>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Current plan</CardTitle>
-          <CardDescription>Your active Glimmora Mind subscription.</CardDescription>
+          <CardTitle className="text-sm">Current plan</CardTitle>
+          <CardDescription className="text-xs">Your active Glimmora Mind subscription.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="font-semibold">{PLAN_LABELS[plan]}</p>
+              <p className="font-semibold text-sm">{PLAN_LABELS[plan]}</p>
               {plan === "free" && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   AI companion, mood tracking, journaling
@@ -185,10 +186,14 @@ function AccountTab() {
                 </p>
               )}
             </div>
-            <Badge variant={PLAN_BADGE[plan]}>{PLAN_LABELS[plan]}</Badge>
+            <Badge variant={PLAN_BADGE[plan]} className="shrink-0">{PLAN_LABELS[plan]}</Badge>
           </div>
           {plan !== "therapy_access" && (
-            <Button variant="outline" size="sm" onClick={() => alert("Plan upgrade available after backend integration.")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => alert("Plan upgrade available after backend integration.")}
+            >
               Upgrade plan
             </Button>
           )}
@@ -197,21 +202,19 @@ function AccountTab() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Account info</CardTitle>
+          <CardTitle className="text-sm">Account info</CardTitle>
         </CardHeader>
         <CardContent>
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between">
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Member since</dt>
-              <dd className="font-medium">
+              <dd className="font-medium text-right">
                 {new Date(user.createdAt).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
+                  year: "numeric", month: "long", day: "numeric",
                 })}
               </dd>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Sign-in method</dt>
               <dd className="font-medium capitalize">{user.authProvider ?? "email"}</dd>
             </div>
@@ -219,10 +222,10 @@ function AccountTab() {
         </CardContent>
       </Card>
 
-      <div className="pt-2">
+      <div className="pt-1">
         <button
           type="button"
-          className="text-sm text-destructive hover:underline"
+          className="text-sm text-destructive hover:underline transition-colors"
           onClick={() => alert("Account deletion is not available in mock mode.")}
         >
           Delete my account
@@ -232,10 +235,13 @@ function AccountTab() {
   );
 }
 
+/* ─── Security tab ───────────────────────────────────────────────────── */
 function SecurityTab() {
-  const { user, updatePassword, isSavingPassword, passwordSaved, passwordError } = useProfile();
+  const { user, updatePassword, isSavingPassword, passwordSaved, passwordError } =
+    useProfile();
+
   const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
+  const [newPw,     setNewPw]     = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -244,25 +250,17 @@ function SecurityTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLocalError(null);
-    if (newPw.length < 8) {
-      setLocalError("New password must be at least 8 characters.");
-      return;
-    }
-    if (newPw !== confirmPw) {
-      setLocalError("Passwords do not match.");
-      return;
-    }
+    if (newPw.length < 8) { setLocalError("New password must be at least 8 characters."); return; }
+    if (newPw !== confirmPw) { setLocalError("Passwords do not match."); return; }
     try {
       await updatePassword({ currentPassword: currentPw, newPassword: newPw });
       setCurrentPw(""); setNewPw(""); setConfirmPw("");
-    } catch { /* error shown below */ }
+    } catch { /* shown below */ }
   }
 
   const errorMessage =
     localError ??
-    (passwordError
-      ? isApiError(passwordError) ? passwordError.message : "Could not update password."
-      : null);
+    (passwordError ? (isApiError(passwordError) ? passwordError.message : "Could not update password.") : null);
 
   if (isGoogle) {
     return (
@@ -313,27 +311,28 @@ function SecurityTab() {
       </div>
 
       {errorMessage && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive border border-destructive/20">
+        <p className="rounded-lg bg-destructive/8 px-3 py-2 text-sm text-destructive border border-destructive/20">
           {errorMessage}
         </p>
       )}
       {passwordSaved && (
-        <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+        <p className="flex items-center gap-1.5 text-sm text-emerald-600 animate-fade-in">
           <CheckCircle2 className="h-4 w-4" /> Password changed successfully.
         </p>
       )}
 
       <Button type="submit" loading={isSavingPassword} disabled={isSavingPassword}>
-        {isSavingPassword ? "Updating..." : "Update password"}
+        {isSavingPassword ? "Updating…" : "Update password"}
       </Button>
     </form>
   );
 }
 
+/* ─── Main settings view ─────────────────────────────────────────────── */
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
-  { id: "account", label: "Account & Plan", icon: <CreditCard className="h-4 w-4" /> },
-  { id: "security", label: "Security", icon: <Lock className="h-4 w-4" /> },
+  { id: "profile",  label: "Profile",       icon: <User       className="h-4 w-4" /> },
+  { id: "account",  label: "Account & Plan", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "security", label: "Security",       icon: <Lock       className="h-4 w-4" /> },
 ];
 
 export function SettingsView() {
@@ -341,30 +340,33 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6">
-      {/* Tab bar */}
-      <div className="flex gap-1 border-b border-border">
+      {/* Tab bar — horizontally scrollable on small screens */}
+      <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none -mx-0.5 px-0.5">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
+              "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors shrink-0",
               activeTab === tab.id
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
             )}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">
+              {tab.id === "profile" ? "Profile" : tab.id === "account" ? "Account" : "Security"}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Tab panels */}
-      <div>
-        {activeTab === "profile" && <ProfileTab />}
-        {activeTab === "account" && <AccountTab />}
+      {/* Tab content */}
+      <div className="animate-fade-in">
+        {activeTab === "profile"  && <ProfileTab  />}
+        {activeTab === "account"  && <AccountTab  />}
         {activeTab === "security" && <SecurityTab />}
       </div>
     </div>
